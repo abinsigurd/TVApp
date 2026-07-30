@@ -4,44 +4,45 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alvinwijaya.tvapp.data.remote.RetrofitClient
+import com.alvinwijaya.tvapp.data.repository.ShowRepositoryImpl
+import com.alvinwijaya.tvapp.ui.list.ShowListRoute
+import com.alvinwijaya.tvapp.ui.list.ShowListViewModel
+import com.alvinwijaya.tvapp.ui.list.ShowListViewModelFactory
 import com.alvinwijaya.tvapp.ui.theme.TVAppTheme
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
+
         setContent {
             TVAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                val repository = remember {
+                    ShowRepositoryImpl(
+                        api = RetrofitClient.tvMazeApi
                     )
                 }
+
+                val viewModelFactory = remember {
+                    ShowListViewModelFactory(
+                        repository = repository
+                    )
+                }
+
+                val showListViewModel: ShowListViewModel =
+                    viewModel(
+                        factory = viewModelFactory
+                    )
+
+                ShowListRoute(
+                    viewModel = showListViewModel
+                )
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TVAppTheme {
-        Greeting("Android")
     }
 }
