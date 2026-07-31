@@ -13,10 +13,9 @@ class ShowDetailViewModel(
     private val showId: Int
 ) : ViewModel() {
 
-    private val _uiState =
-        MutableStateFlow<ShowDetailUiState>(
-            ShowDetailUiState.Loading
-        )
+    private val _uiState = MutableStateFlow<ShowDetailUiState>(
+        ShowDetailUiState.Loading
+    )
 
     val uiState: StateFlow<ShowDetailUiState> =
         _uiState.asStateFlow()
@@ -30,10 +29,12 @@ class ShowDetailViewModel(
             _uiState.value = ShowDetailUiState.Loading
 
             _uiState.value = try {
-                val show = repository.getShowDetail(showId)
+                val content = repository.getShowDetailContent(
+                    showId = showId
+                )
 
                 ShowDetailUiState.Success(
-                    show = show
+                    content = content
                 )
             } catch (exception: Exception) {
                 ShowDetailUiState.Error(

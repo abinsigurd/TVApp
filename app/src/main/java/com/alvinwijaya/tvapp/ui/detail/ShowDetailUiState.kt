@@ -1,13 +1,13 @@
 package com.alvinwijaya.tvapp.ui.detail
 
-import com.alvinwijaya.tvapp.data.model.Show
+import com.alvinwijaya.tvapp.data.model.ShowDetailContent
 
 sealed interface ShowDetailUiState {
 
     data object Loading : ShowDetailUiState
 
     data class Success(
-        val show: Show
+        val content: ShowDetailContent
     ) : ShowDetailUiState
 
     data class Error(

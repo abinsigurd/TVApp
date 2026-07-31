@@ -14,6 +14,7 @@ interface TvMazeApi {
 
     @GET("shows/{id}")
     suspend fun getShowDetail(
-        @Path("id") showId: Int
+        @Path("id") showId: Int,
+        @Query("embed") embed: String = "cast"
     ): Show
 }

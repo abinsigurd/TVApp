@@ -1,8 +1,12 @@
 package com.alvinwijaya.tvapp.ui.detail
 
 import com.alvinwijaya.tvapp.MainDispatcherRule
+import com.alvinwijaya.tvapp.data.model.CastCredit
+import com.alvinwijaya.tvapp.data.model.Character as ShowCharacter
+import com.alvinwijaya.tvapp.data.model.Person
 import com.alvinwijaya.tvapp.data.model.Rating
 import com.alvinwijaya.tvapp.data.model.Show
+import com.alvinwijaya.tvapp.data.model.ShowDetailContent
 import com.alvinwijaya.tvapp.data.model.ShowImage
 import com.alvinwijaya.tvapp.data.repository.ShowRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,13 +23,46 @@ class ShowDetailViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `loadShow requests the correct show id and returns success`() = runTest {
-        val requestedShowId = 42
+    fun `loadShow requests correct show id and returns content`() = runTest {
+        val expectedContent = createDetailContent()
 
-        val expectedShow = Show(
-            id = requestedShowId,
+        val repository = FakeDetailShowRepository(
+            detailContent = expectedContent
+        )
+
+        val viewModel = ShowDetailViewModel(
+            repository = repository,
+            showId = TEST_SHOW_ID
+        )
+
+        assertEquals(
+            ShowDetailUiState.Loading,
+            viewModel.uiState.value
+        )
+
+        advanceUntilIdle()
+
+        assertEquals(
+            TEST_SHOW_ID,
+            repository.lastRequestedShowId
+        )
+
+        assertEquals(
+            1,
+            repository.getShowDetailCallCount
+        )
+
+        assertEquals(
+            ShowDetailUiState.Success(expectedContent),
+            viewModel.uiState.value
+        )
+    }
+
+    private fun createDetailContent(): ShowDetailContent {
+        val show = Show(
+            id = TEST_SHOW_ID,
             name = "Test Show",
-            url = "https://www.tvmaze.com/shows/$requestedShowId",
+            url = "https://www.tvmaze.com/shows/$TEST_SHOW_ID",
             summary = "<p>Test summary</p>",
             premiered = "2024-01-01",
             rating = Rating(
@@ -37,39 +74,41 @@ class ShowDetailViewModelTest {
             )
         )
 
-        val repository = FakeDetailShowRepository(
-            show = expectedShow
+        val cast = listOf(
+            CastCredit(
+                person = Person(
+                    id = 100,
+                    name = "Test Actor",
+                    image = ShowImage(
+                        medium = "https://example.com/person.jpg"
+                    )
+                ),
+                character = ShowCharacter(
+                    id = 200,
+                    name = "Test Character"
+                )
+            )
         )
 
-        val viewModel = ShowDetailViewModel(
-            repository = repository,
-            showId = requestedShowId
+        return ShowDetailContent(
+            show = show,
+            cast = cast
         )
+    }
 
-        assertEquals(
-            ShowDetailUiState.Loading,
-            viewModel.uiState.value
-        )
-
-        advanceUntilIdle()
-
-        assertEquals(
-            requestedShowId,
-            repository.lastRequestedShowId
-        )
-
-        assertEquals(
-            ShowDetailUiState.Success(expectedShow),
-            viewModel.uiState.value
-        )
+    private companion object {
+        const val TEST_SHOW_ID = 42
     }
 }
 
 private class FakeDetailShowRepository(
-    private val show: Show
+    private val detailContent: ShowDetailContent
 ) : ShowRepository {
 
     var lastRequestedShowId: Int? = null
+        private set
+
+    var getShowDetailCallCount: Int = 0
         private set
 
     override suspend fun getShows(
@@ -80,10 +119,12 @@ private class FakeDetailShowRepository(
         )
     }
 
-    override suspend fun getShowDetail(
+    override suspend fun getShowDetailContent(
         showId: Int
-    ): Show {
+    ): ShowDetailContent {
         lastRequestedShowId = showId
-        return show
+        getShowDetailCallCount += 1
+
+        return detailContent
     }
 }

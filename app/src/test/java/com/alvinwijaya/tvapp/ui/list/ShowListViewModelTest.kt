@@ -3,6 +3,7 @@ package com.alvinwijaya.tvapp.ui.list
 import com.alvinwijaya.tvapp.MainDispatcherRule
 import com.alvinwijaya.tvapp.data.model.Rating
 import com.alvinwijaya.tvapp.data.model.Show
+import com.alvinwijaya.tvapp.data.model.ShowDetailContent
 import com.alvinwijaya.tvapp.data.model.ShowImage
 import com.alvinwijaya.tvapp.data.repository.ShowRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -179,11 +180,11 @@ private class FakeShowRepository(
         return showsResult.getOrThrow()
     }
 
-    override suspend fun getShowDetail(
+    override suspend fun getShowDetailContent(
         showId: Int
-    ): Show {
+    ): ShowDetailContent {
         error(
-            "getShowDetail is not used in ShowListViewModel tests"
+            "getShowDetailContent is not used in ShowListViewModel tests"
         )
     }
 }
