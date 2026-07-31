@@ -1,5 +1,7 @@
 package com.alvinwijaya.tvapp.ui.list
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -103,7 +106,9 @@ fun ShowListScreen(
                 ExtendedFloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
-                            gridState.animateScrollToItem(index = 0)
+                            gridState.animateScrollToItem(
+                                index = 0
+                            )
                         }
                     },
                     icon = {
@@ -259,7 +264,9 @@ private fun ShowGrid(
     ) {
         items(
             items = shows,
-            key = { show -> show.id }
+            key = { show ->
+                show.id
+            }
         ) { show ->
             ShowCard(
                 show = show,
@@ -300,61 +307,76 @@ private fun ShowCard(
         )
     ) {
         Column {
-            if (posterUrl != null) {
-                AsyncImage(
-                    model = posterUrl,
-                    contentDescription = "${show.name} poster",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(210f / 295f),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(210f / 295f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No poster",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(210f / 295f)
             ) {
-                Text(
-                    text = show.name,
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        lineHeight = 20.sp
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    minLines = 2,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                if (posterUrl != null) {
+                    AsyncImage(
+                        model = posterUrl,
+                        contentDescription = "${show.name} poster",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No poster",
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
                 Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp),
                     shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    color = MaterialTheme.colorScheme.scrim.copy(
+                        alpha = 0.78f
+                    ),
+                    contentColor = Color.White,
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.24f)
+                    ),
+                    shadowElevation = 4.dp
                 ) {
                     Text(
                         text = "★ $ratingText",
                         modifier = Modifier.padding(
-                            horizontal = 10.dp,
-                            vertical = 5.dp
+                            horizontal = 12.dp,
+                            vertical = 7.dp
                         ),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
+
+            Text(
+                text = show.name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    lineHeight = 20.sp
+                ),
+                fontWeight = FontWeight.Bold,
+                minLines = 2,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start
+            )
         }
     }
 }
