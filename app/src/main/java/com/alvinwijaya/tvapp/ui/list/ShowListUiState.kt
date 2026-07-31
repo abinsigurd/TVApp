@@ -7,7 +7,10 @@ sealed interface ShowListUiState {
     data object Loading : ShowListUiState
 
     data class Success(
-        val shows: List<Show>
+        val shows: List<Show>,
+        val isLoadingMore: Boolean = false,
+        val loadMoreError: String? = null,
+        val endReached: Boolean = false
     ) : ShowListUiState
 
     data class Error(

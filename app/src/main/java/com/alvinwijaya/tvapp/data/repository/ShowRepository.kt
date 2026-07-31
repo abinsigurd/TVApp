@@ -1,17 +1,18 @@
 package com.alvinwijaya.tvapp.data.repository
 
-import com.alvinwijaya.tvapp.data.model.Show
 import com.alvinwijaya.tvapp.data.model.ShowDetailContent
+import com.alvinwijaya.tvapp.data.model.ShowPage
 import com.alvinwijaya.tvapp.data.remote.TvMazeApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import retrofit2.HttpException
 
 interface ShowRepository {
 
     suspend fun getShows(
         page: Int = 0
-    ): List<Show>
+    ): ShowPage
 
     suspend fun getShowDetailContent(
         showId: Int
@@ -24,8 +25,22 @@ class ShowRepositoryImpl(
 
     override suspend fun getShows(
         page: Int
-    ): List<Show> {
-        return api.getShows(page)
+    ): ShowPage {
+        return try {
+            ShowPage(
+                shows = api.getShows(page),
+                endReached = false
+            )
+        } catch (exception: HttpException) {
+            if (exception.code() == 404) {
+                ShowPage(
+                    shows = emptyList(),
+                    endReached = true
+                )
+            } else {
+                throw exception
+            }
+        }
     }
 
     override suspend fun getShowDetailContent(
@@ -40,7 +55,7 @@ class ShowRepositoryImpl(
                 api.getShowSeasons(showId)
             } catch (exception: CancellationException) {
                 throw exception
-            } catch (exception: Exception) {
+            } catch (_: Exception) {
                 emptyList()
             }
         }

@@ -10,6 +10,7 @@ import com.alvinwijaya.tvapp.data.model.Season
 import com.alvinwijaya.tvapp.data.model.Show
 import com.alvinwijaya.tvapp.data.model.ShowDetailContent
 import com.alvinwijaya.tvapp.data.model.ShowImage
+import com.alvinwijaya.tvapp.data.model.ShowPage
 import com.alvinwijaya.tvapp.data.repository.ShowRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -228,7 +229,7 @@ private class FakeDetailShowRepository(
 
     override suspend fun getShows(
         page: Int
-    ): List<Show> {
+    ): ShowPage {
         error(
             "getShows is not used in ShowDetailViewModel tests"
         )

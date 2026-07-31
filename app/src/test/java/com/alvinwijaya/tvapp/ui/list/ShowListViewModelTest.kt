@@ -1,19 +1,18 @@
 package com.alvinwijaya.tvapp.ui.list
 
 import com.alvinwijaya.tvapp.MainDispatcherRule
-import com.alvinwijaya.tvapp.data.model.Rating
 import com.alvinwijaya.tvapp.data.model.Show
 import com.alvinwijaya.tvapp.data.model.ShowDetailContent
-import com.alvinwijaya.tvapp.data.model.ShowImage
+import com.alvinwijaya.tvapp.data.model.ShowPage
 import com.alvinwijaya.tvapp.data.repository.ShowRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ShowListViewModelTest {
@@ -22,23 +21,24 @@ class ShowListViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `loadShows returns success when repository succeeds`() = runTest {
-        val expectedShows = listOf(
+    fun `loadShows requests first page and returns shows`() = runTest {
+        val firstPageShows = listOf(
             createShow(
                 id = 1,
-                name = "Under the Dome",
-                rating = 6.5
+                name = "First Show"
             ),
             createShow(
                 id = 2,
-                name = "Person of Interest",
-                rating = 8.8
+                name = "Second Show"
             )
         )
 
-        val repository = FakeShowRepository(
-            showsResult = Result.success(expectedShows)
-        )
+        val repository = FakeShowRepository().apply {
+            pages[0] = ShowPage(
+                shows = firstPageShows,
+                endReached = false
+            )
+        }
 
         val viewModel = ShowListViewModel(
             repository = repository
@@ -52,23 +52,25 @@ class ShowListViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            ShowListUiState.Success(expectedShows),
+            listOf(0),
+            repository.requestedPages
+        )
+
+        assertEquals(
+            ShowListUiState.Success(
+                shows = firstPageShows
+            ),
             viewModel.uiState.value
         )
-
-        assertEquals(
-            1,
-            repository.getShowsCallCount
-        )
     }
 
     @Test
-    fun `loadShows returns error when repository fails`() = runTest {
-        val repository = FakeShowRepository(
-            showsResult = Result.failure(
-                IOException("No internet connection")
+    fun `loadShows returns error when first page fails`() = runTest {
+        val repository = FakeShowRepository().apply {
+            errors[0] = IllegalStateException(
+                "Network unavailable"
             )
-        )
+        }
 
         val viewModel = ShowListViewModel(
             repository = repository
@@ -76,108 +78,257 @@ class ShowListViewModelTest {
 
         advanceUntilIdle()
 
-        val currentState = viewModel.uiState.value
-
-        assertTrue(
-            currentState is ShowListUiState.Error
-        )
-
         assertEquals(
-            "No internet connection",
-            (currentState as ShowListUiState.Error).message
-        )
-
-        assertEquals(
-            1,
-            repository.getShowsCallCount
+            ShowListUiState.Error(
+                message = "Network unavailable"
+            ),
+            viewModel.uiState.value
         )
     }
 
     @Test
-    fun `retry loads shows again after an error`() = runTest {
-        val repository = FakeShowRepository(
-            showsResult = Result.failure(
-                IOException("Temporary error")
-            )
-        )
-
-        val viewModel = ShowListViewModel(
-            repository = repository
-        )
-
-        advanceUntilIdle()
-
-        assertTrue(
-            viewModel.uiState.value is ShowListUiState.Error
-        )
-
+    fun `loadShows retries after initial failure`() = runTest {
         val expectedShows = listOf(
             createShow(
-                id = 10,
-                name = "The Expanse",
-                rating = 8.5
+                id = 1,
+                name = "Recovered Show"
             )
         )
 
-        repository.setShowsResult(
-            Result.success(expectedShows)
+        val repository = FakeShowRepository().apply {
+            errors[0] = IllegalStateException(
+                "Network unavailable"
+            )
+        }
+
+        val viewModel = ShowListViewModel(
+            repository = repository
+        )
+
+        advanceUntilIdle()
+
+        repository.errors.remove(0)
+        repository.pages[0] = ShowPage(
+            shows = expectedShows,
+            endReached = false
         )
 
         viewModel.loadShows()
-
         advanceUntilIdle()
 
         assertEquals(
-            ShowListUiState.Success(expectedShows),
+            listOf(0, 0),
+            repository.requestedPages
+        )
+
+        assertEquals(
+            ShowListUiState.Success(
+                shows = expectedShows
+            ),
             viewModel.uiState.value
+        )
+    }
+
+    @Test
+    fun `loadNextPage appends shows from next page`() = runTest {
+        val firstShow = createShow(
+            id = 1,
+            name = "First Show"
+        )
+
+        val secondShow = createShow(
+            id = 251,
+            name = "Next Page Show"
+        )
+
+        val repository = FakeShowRepository().apply {
+            pages[0] = ShowPage(
+                shows = listOf(firstShow),
+                endReached = false
+            )
+
+            pages[1] = ShowPage(
+                shows = listOf(secondShow),
+                endReached = false
+            )
+        }
+
+        val viewModel = ShowListViewModel(
+            repository = repository
+        )
+
+        advanceUntilIdle()
+
+        viewModel.loadNextPage()
+        advanceUntilIdle()
+
+        val currentState =
+            viewModel.uiState.value as ShowListUiState.Success
+
+        assertEquals(
+            listOf(0, 1),
+            repository.requestedPages
+        )
+
+        assertEquals(
+            listOf(firstShow, secondShow),
+            currentState.shows
+        )
+
+        assertFalse(currentState.isLoadingMore)
+        assertFalse(currentState.endReached)
+        assertEquals(null, currentState.loadMoreError)
+    }
+
+    @Test
+    fun `loadNextPage keeps current shows when request fails`() = runTest {
+        val firstShow = createShow(
+            id = 1,
+            name = "First Show"
+        )
+
+        val repository = FakeShowRepository().apply {
+            pages[0] = ShowPage(
+                shows = listOf(firstShow),
+                endReached = false
+            )
+
+            errors[1] = IllegalStateException(
+                "Unable to load next page"
+            )
+        }
+
+        val viewModel = ShowListViewModel(
+            repository = repository
+        )
+
+        advanceUntilIdle()
+
+        viewModel.loadNextPage()
+        advanceUntilIdle()
+
+        val errorState =
+            viewModel.uiState.value as ShowListUiState.Success
+
+        assertEquals(
+            listOf(firstShow),
+            errorState.shows
+        )
+
+        assertEquals(
+            "Unable to load next page",
+            errorState.loadMoreError
+        )
+
+        assertFalse(errorState.isLoadingMore)
+        assertFalse(errorState.endReached)
+
+        repository.errors.remove(1)
+        repository.pages[1] = ShowPage(
+            shows = listOf(
+                createShow(
+                    id = 251,
+                    name = "Recovered Page Show"
+                )
+            ),
+            endReached = false
+        )
+
+        viewModel.loadNextPage()
+        advanceUntilIdle()
+
+        val recoveredState =
+            viewModel.uiState.value as ShowListUiState.Success
+
+        assertEquals(
+            listOf(0, 1, 1),
+            repository.requestedPages
         )
 
         assertEquals(
             2,
-            repository.getShowsCallCount
+            recoveredState.shows.size
+        )
+
+        assertEquals(
+            null,
+            recoveredState.loadMoreError
+        )
+    }
+
+    @Test
+    fun `loadNextPage marks end and prevents another request`() = runTest {
+        val firstShow = createShow(
+            id = 1,
+            name = "First Show"
+        )
+
+        val repository = FakeShowRepository().apply {
+            pages[0] = ShowPage(
+                shows = listOf(firstShow),
+                endReached = false
+            )
+
+            pages[1] = ShowPage(
+                shows = emptyList(),
+                endReached = true
+            )
+        }
+
+        val viewModel = ShowListViewModel(
+            repository = repository
+        )
+
+        advanceUntilIdle()
+
+        viewModel.loadNextPage()
+        advanceUntilIdle()
+
+        val currentState =
+            viewModel.uiState.value as ShowListUiState.Success
+
+        assertTrue(currentState.endReached)
+        assertFalse(currentState.isLoadingMore)
+
+        viewModel.loadNextPage()
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(0, 1),
+            repository.requestedPages
         )
     }
 
     private fun createShow(
         id: Int,
-        name: String,
-        rating: Double?
+        name: String
     ): Show {
         return Show(
             id = id,
-            name = name,
-            url = "https://www.tvmaze.com/shows/$id",
-            summary = "<p>Test summary</p>",
-            premiered = "2020-01-01",
-            rating = Rating(
-                average = rating
-            ),
-            image = ShowImage(
-                medium = "https://example.com/medium.jpg",
-                original = "https://example.com/original.jpg"
-            )
+            name = name
         )
     }
 }
 
-private class FakeShowRepository(
-    private var showsResult: Result<List<Show>>
-) : ShowRepository {
+private class FakeShowRepository : ShowRepository {
 
-    var getShowsCallCount: Int = 0
-        private set
-
-    fun setShowsResult(
-        result: Result<List<Show>>
-    ) {
-        showsResult = result
-    }
+    val pages = mutableMapOf<Int, ShowPage>()
+    val errors = mutableMapOf<Int, Throwable>()
+    val requestedPages = mutableListOf<Int>()
 
     override suspend fun getShows(
         page: Int
-    ): List<Show> {
-        getShowsCallCount += 1
-        return showsResult.getOrThrow()
+    ): ShowPage {
+        requestedPages += page
+
+        errors[page]?.let { error ->
+            throw error
+        }
+
+        return pages[page] ?: ShowPage(
+            shows = emptyList(),
+            endReached = true
+        )
     }
 
     override suspend fun getShowDetailContent(

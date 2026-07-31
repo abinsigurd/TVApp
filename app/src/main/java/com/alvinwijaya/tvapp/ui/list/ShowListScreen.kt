@@ -1,54 +1,27 @@
 package com.alvinwijaya.tvapp.ui.list
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
-import com.alvinwijaya.tvapp.data.model.Show
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import com.alvinwijaya.tvapp.ui.components.AppTopBar
+import com.alvinwijaya.tvapp.ui.list.components.ShowGrid
+import com.alvinwijaya.tvapp.ui.list.components.ShowListError
+import com.alvinwijaya.tvapp.ui.list.components.ShowListLoading
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @Composable
 fun ShowListRoute(
@@ -63,6 +36,7 @@ fun ShowListRoute(
     ShowListScreen(
         uiState = uiState,
         onRetry = viewModel::loadShows,
+        onLoadMore = viewModel::loadNextPage,
         onShowClick = onShowClick,
         isDarkTheme = isDarkTheme,
         onThemeToggle = onThemeToggle,
@@ -74,6 +48,7 @@ fun ShowListRoute(
 fun ShowListScreen(
     uiState: ShowListUiState,
     onRetry: () -> Unit,
+    onLoadMore: () -> Unit,
     onShowClick: (Int) -> Unit,
     isDarkTheme: Boolean,
     onThemeToggle: (Boolean) -> Unit,
@@ -106,9 +81,7 @@ fun ShowListScreen(
                 ExtendedFloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
-                            gridState.animateScrollToItem(
-                                index = 0
-                            )
+                            gridState.animateScrollToItem(index = 0)
                         }
                     },
                     icon = {
@@ -131,16 +104,16 @@ fun ShowListScreen(
     ) { innerPadding ->
         when (uiState) {
             ShowListUiState.Loading -> {
-                LoadingContent(
-                    modifier = Modifier.padding(innerPadding)
+                ShowListLoading(
+                    contentPadding = innerPadding
                 )
             }
 
             is ShowListUiState.Error -> {
-                ErrorContent(
+                ShowListError(
                     message = uiState.message,
                     onRetry = onRetry,
-                    modifier = Modifier.padding(innerPadding)
+                    contentPadding = innerPadding
                 )
             }
 
@@ -148,235 +121,14 @@ fun ShowListScreen(
                 ShowGrid(
                     shows = uiState.shows,
                     gridState = gridState,
-                    onShowClick = onShowClick,
-                    modifier = Modifier.padding(innerPadding)
+                    contentPadding = innerPadding,
+                    isLoadingMore = uiState.isLoadingMore,
+                    loadMoreError = uiState.loadMoreError,
+                    endReached = uiState.endReached,
+                    onLoadMore = onLoadMore,
+                    onShowClick = onShowClick
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun LoadingContent(
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Text(
-            text = "Loading shows...",
-            modifier = Modifier.padding(top = 16.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun ErrorContent(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 380.dp),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 2.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Something went wrong",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-
-                Text(
-                    text = message,
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-
-                Button(
-                    onClick = onRetry,
-                    modifier = Modifier.padding(top = 20.dp)
-                ) {
-                    Text(text = "Try again")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShowGrid(
-    shows: List<Show>,
-    gridState: LazyGridState,
-    onShowClick: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (shows.isEmpty()) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "No TV shows found.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        return
-    }
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        state = gridState,
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 8.dp,
-            end = 16.dp,
-            bottom = 104.dp
-        ),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(
-            items = shows,
-            key = { show ->
-                show.id
-            }
-        ) { show ->
-            ShowCard(
-                show = show,
-                onClick = {
-                    onShowClick(show.id)
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun ShowCard(
-    show: Show,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val posterUrl = show.image?.medium
-
-    val ratingText = show.rating?.average?.let { rating ->
-        String.format(
-            Locale.getDefault(),
-            "%.1f",
-            rating
-        )
-    } ?: "N/A"
-
-    ElevatedCard(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 6.dp
-        )
-    ) {
-        Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(210f / 295f)
-            ) {
-                if (posterUrl != null) {
-                    AsyncImage(
-                        model = posterUrl,
-                        contentDescription = "${show.name} poster",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No poster",
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.scrim.copy(
-                        alpha = 0.78f
-                    ),
-                    contentColor = Color.White,
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = Color.White.copy(alpha = 0.24f)
-                    ),
-                    shadowElevation = 4.dp
-                ) {
-                    Text(
-                        text = "★ $ratingText",
-                        modifier = Modifier.padding(
-                            horizontal = 12.dp,
-                            vertical = 7.dp
-                        ),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Text(
-                text = show.name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    lineHeight = 20.sp
-                ),
-                fontWeight = FontWeight.Bold,
-                minLines = 2,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Start
-            )
         }
     }
 }
