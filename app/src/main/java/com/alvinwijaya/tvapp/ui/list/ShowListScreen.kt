@@ -8,23 +8,28 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -34,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,7 +78,7 @@ fun ShowListScreen(
 
     val showScrollToTopButton by remember {
         derivedStateOf {
-            gridState.firstVisibleItemIndex >= 4
+            gridState.firstVisibleItemIndex >= 6
         }
     }
 
@@ -82,8 +88,16 @@ fun ShowListScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "TV Shows")
-                }
+                    Text(
+                        text = "TV Shows",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                )
             )
         },
         floatingActionButton = {
@@ -94,25 +108,23 @@ fun ShowListScreen(
                 ExtendedFloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
-                            gridState.animateScrollToItem(
-                                index = 0
-                            )
+                            gridState.animateScrollToItem(index = 0)
                         }
                     },
                     icon = {
                         Icon(
-                            imageVector =
-                                Icons.Default.KeyboardArrowUp,
+                            imageVector = Icons.Default.KeyboardArrowUp,
                             contentDescription = null
                         )
                     },
                     text = {
-                        Text(text = "Top")
+                        Text(
+                            text = "Top",
+                            fontWeight = FontWeight.SemiBold
+                        )
                     },
-                    containerColor =
-                        MaterialTheme.colorScheme.primary,
-                    contentColor =
-                        MaterialTheme.colorScheme.onPrimary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -148,11 +160,21 @@ fun ShowListScreen(
 private fun LoadingContent(
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Column(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            text = "Loading shows...",
+            modifier = Modifier.padding(top = 16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -162,30 +184,46 @@ private fun ErrorContent(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "Something went wrong",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            text = message,
-            modifier = Modifier.padding(top = 8.dp),
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Button(
-            onClick = onRetry,
-            modifier = Modifier.padding(top = 16.dp)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 380.dp),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 2.dp
         ) {
-            Text(text = "Retry")
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Something went wrong",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = message,
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+
+                Button(
+                    onClick = onRetry,
+                    modifier = Modifier.padding(top = 20.dp)
+                ) {
+                    Text(text = "Try again")
+                }
+            }
         }
     }
 }
@@ -202,7 +240,10 @@ private fun ShowGrid(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "No TV shows found.")
+            Text(
+                text = "No TV shows found.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         return
@@ -213,15 +254,13 @@ private fun ShowGrid(
         state = gridState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = 12.dp,
-            top = 12.dp,
-            end = 12.dp,
+            start = 16.dp,
+            top = 8.dp,
+            end = 16.dp,
             bottom = 104.dp
         ),
-        horizontalArrangement =
-            Arrangement.spacedBy(12.dp),
-        verticalArrangement =
-            Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(
             items = shows,
@@ -245,25 +284,31 @@ private fun ShowCard(
 ) {
     val posterUrl = show.image?.medium
 
-    val ratingText =
-        show.rating?.average?.let { rating ->
-            String.format(
-                Locale.getDefault(),
-                "%.1f",
-                rating
-            )
-        } ?: "N/A"
+    val ratingText = show.rating?.average?.let { rating ->
+        String.format(
+            Locale.getDefault(),
+            "%.1f",
+            rating
+        )
+    } ?: "N/A"
 
-    Card(
+    ElevatedCard(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 6.dp
+        )
     ) {
         Column {
             if (posterUrl != null) {
                 AsyncImage(
                     model = posterUrl,
-                    contentDescription =
-                        "${show.name} poster",
+                    contentDescription = "${show.name} poster",
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(210f / 295f),
@@ -276,32 +321,44 @@ private fun ShowCard(
                         .aspectRatio(210f / 295f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No image")
+                    Text(
+                        text = "No poster",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
             Column(
                 modifier = Modifier.padding(12.dp),
-                verticalArrangement =
-                    Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
                     text = show.name,
                     modifier = Modifier.fillMaxWidth(),
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            lineHeight = 20.sp
-                        ),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        lineHeight = 20.sp
+                    ),
                     fontWeight = FontWeight.Bold,
                     minLines = 2,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Text(
-                    text = "Rating: $ratingText",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ) {
+                    Text(
+                        text = "★ $ratingText",
+                        modifier = Modifier.padding(
+                            horizontal = 10.dp,
+                            vertical = 5.dp
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
