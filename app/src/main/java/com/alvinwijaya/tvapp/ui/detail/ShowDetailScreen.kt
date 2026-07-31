@@ -208,6 +208,7 @@ private fun DetailSuccessContent(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
+            top = 8.dp,
             bottom = 32.dp
         )
     ) {
