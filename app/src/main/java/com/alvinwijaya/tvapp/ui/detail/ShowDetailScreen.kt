@@ -3,6 +3,7 @@ package com.alvinwijaya.tvapp.ui.detail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,15 +15,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -36,12 +34,15 @@ import androidx.core.text.HtmlCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.alvinwijaya.tvapp.data.model.Show
+import com.alvinwijaya.tvapp.ui.components.AppTopBar
 import java.util.Locale
 
 @Composable
 fun ShowDetailRoute(
     viewModel: ShowDetailViewModel,
     onBackClick: () -> Unit,
+    isDarkTheme: Boolean,
+    onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,29 +51,29 @@ fun ShowDetailRoute(
         uiState = uiState,
         onBackClick = onBackClick,
         onRetry = viewModel::loadShow,
+        isDarkTheme = isDarkTheme,
+        onThemeToggle = onThemeToggle,
         modifier = modifier
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowDetailScreen(
     uiState: ShowDetailUiState,
     onBackClick: () -> Unit,
     onRetry: () -> Unit,
+    isDarkTheme: Boolean,
+    onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Show Details",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+            AppTopBar(
+                title = "Show Details",
+                isDarkTheme = isDarkTheme,
+                onThemeToggle = onThemeToggle,
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick
@@ -82,15 +83,9 @@ fun ShowDetailScreen(
                             contentDescription = "Go back"
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    navigationIconContentColor =
-                        MaterialTheme.colorScheme.onBackground
-                )
+                }
             )
-        }
+        },
     ) { innerPadding ->
         when (uiState) {
             ShowDetailUiState.Loading -> {
@@ -212,7 +207,7 @@ private fun DetailSuccessContent(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+        contentPadding = PaddingValues(
             bottom = 32.dp
         )
     ) {

@@ -5,9 +5,9 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -26,14 +26,17 @@ private const val SHOW_LIST_ROUTE = "shows"
 private const val SHOW_ID_ARGUMENT = "showId"
 private const val SHOW_DETAIL_ROUTE = "shows/{$SHOW_ID_ARGUMENT}"
 
-
-private fun createShowDetailRoute(showId: Int): String {
+private fun createShowDetailRoute(
+    showId: Int
+): String {
     return "shows/$showId"
 }
 
 @Composable
 fun AppNavigation(
-    repository: ShowRepository
+    repository: ShowRepository,
+    isDarkTheme: Boolean,
+    onThemeToggle: (Boolean) -> Unit
 ) {
     val navController = rememberNavController()
 
@@ -78,7 +81,9 @@ fun AppNavigation(
                     ) {
                         launchSingleTop = true
                     }
-                }
+                },
+                isDarkTheme = isDarkTheme,
+                onThemeToggle = onThemeToggle
             )
         }
 
@@ -113,7 +118,9 @@ fun AppNavigation(
                 viewModel = showDetailViewModel,
                 onBackClick = {
                     navController.popBackStack()
-                }
+                },
+                isDarkTheme = isDarkTheme,
+                onThemeToggle = onThemeToggle
             )
         }
     }

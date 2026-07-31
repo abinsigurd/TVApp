@@ -21,15 +21,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -46,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.alvinwijaya.tvapp.data.model.Show
+import com.alvinwijaya.tvapp.ui.components.AppTopBar
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -53,6 +51,8 @@ import java.util.Locale
 fun ShowListRoute(
     viewModel: ShowListViewModel,
     onShowClick: (Int) -> Unit,
+    isDarkTheme: Boolean,
+    onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -61,16 +61,19 @@ fun ShowListRoute(
         uiState = uiState,
         onRetry = viewModel::loadShows,
         onShowClick = onShowClick,
+        isDarkTheme = isDarkTheme,
+        onThemeToggle = onThemeToggle,
         modifier = modifier
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShowListScreen(
     uiState: ShowListUiState,
     onRetry: () -> Unit,
     onShowClick: (Int) -> Unit,
+    isDarkTheme: Boolean,
+    onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val gridState = rememberLazyGridState()
@@ -86,18 +89,10 @@ fun ShowListScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "TV Shows",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+            AppTopBar(
+                title = "TV Shows",
+                isDarkTheme = isDarkTheme,
+                onThemeToggle = onThemeToggle
             )
         },
         floatingActionButton = {

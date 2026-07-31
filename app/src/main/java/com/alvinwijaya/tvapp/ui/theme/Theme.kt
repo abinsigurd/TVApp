@@ -31,7 +31,8 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = Slate100,
     onSurfaceVariant = Slate600,
 
-    outline = Slate300
+    outline = Slate300,
+    outlineVariant = Slate200
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -59,7 +60,8 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = Slate800,
     onSurfaceVariant = Slate300,
 
-    outline = Slate600
+    outline = Slate600,
+    outlineVariant = Slate800
 )
 
 @Composable
