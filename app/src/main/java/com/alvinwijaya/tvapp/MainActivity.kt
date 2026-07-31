@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.alvinwijaya.tvapp.data.remote.RetrofitClient
 import com.alvinwijaya.tvapp.data.repository.ShowRepositoryImpl
 import com.alvinwijaya.tvapp.ui.navigation.AppNavigation
@@ -18,6 +19,8 @@ import com.alvinwijaya.tvapp.ui.theme.TVAppTheme
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
