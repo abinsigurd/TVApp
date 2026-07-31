@@ -46,6 +46,7 @@ import java.util.Locale
 @Composable
 fun ShowListRoute(
     viewModel: ShowListViewModel,
+    onShowClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -53,6 +54,7 @@ fun ShowListRoute(
     ShowListScreen(
         uiState = uiState,
         onRetry = viewModel::loadShows,
+        onShowClick = onShowClick,
         modifier = modifier
     )
 }
@@ -62,6 +64,7 @@ fun ShowListRoute(
 fun ShowListScreen(
     uiState: ShowListUiState,
     onRetry: () -> Unit,
+    onShowClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val gridState = rememberLazyGridState()
@@ -90,20 +93,25 @@ fun ShowListScreen(
                 ExtendedFloatingActionButton(
                     onClick = {
                         coroutineScope.launch {
-                            gridState.animateScrollToItem(index = 0)
+                            gridState.animateScrollToItem(
+                                index = 0
+                            )
                         }
                     },
                     icon = {
                         Icon(
-                            imageVector = Icons.Default.KeyboardArrowUp,
+                            imageVector =
+                                Icons.Default.KeyboardArrowUp,
                             contentDescription = null
                         )
                     },
                     text = {
                         Text(text = "Top")
                     },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor =
+                        MaterialTheme.colorScheme.primary,
+                    contentColor =
+                        MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -127,6 +135,7 @@ fun ShowListScreen(
                 ShowGrid(
                     shows = uiState.shows,
                     gridState = gridState,
+                    onShowClick = onShowClick,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -184,6 +193,7 @@ private fun ErrorContent(
 private fun ShowGrid(
     shows: List<Show>,
     gridState: LazyGridState,
+    onShowClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (shows.isEmpty()) {
@@ -207,14 +217,21 @@ private fun ShowGrid(
             end = 12.dp,
             bottom = 104.dp
         ),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement =
+            Arrangement.spacedBy(12.dp),
+        verticalArrangement =
+            Arrangement.spacedBy(12.dp)
     ) {
         items(
             items = shows,
             key = { show -> show.id }
         ) { show ->
-            ShowCard(show = show)
+            ShowCard(
+                show = show,
+                onClick = {
+                    onShowClick(show.id)
+                }
+            )
         }
     }
 }
@@ -222,26 +239,30 @@ private fun ShowGrid(
 @Composable
 private fun ShowCard(
     show: Show,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val posterUrl = show.image?.medium
 
-    val ratingText = show.rating?.average?.let { rating ->
-        String.format(
-            Locale.getDefault(),
-            "%.1f",
-            rating
-        )
-    } ?: "N/A"
+    val ratingText =
+        show.rating?.average?.let { rating ->
+            String.format(
+                Locale.getDefault(),
+                "%.1f",
+                rating
+            )
+        } ?: "N/A"
 
     Card(
+        onClick = onClick,
         modifier = modifier.fillMaxWidth()
     ) {
         Column {
             if (posterUrl != null) {
                 AsyncImage(
                     model = posterUrl,
-                    contentDescription = "${show.name} poster",
+                    contentDescription =
+                        "${show.name} poster",
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(210f / 295f),
@@ -260,14 +281,16 @@ private fun ShowCard(
 
             Column(
                 modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement =
+                    Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = show.name,
                     modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        lineHeight = 20.sp
-                    ),
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            lineHeight = 20.sp
+                        ),
                     fontWeight = FontWeight.Bold,
                     minLines = 2,
                     maxLines = 2,
