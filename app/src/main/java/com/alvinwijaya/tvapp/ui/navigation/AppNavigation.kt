@@ -1,10 +1,11 @@
 package com.alvinwijaya.tvapp.ui.navigation
 
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,8 +26,6 @@ private const val SHOW_LIST_ROUTE = "shows"
 private const val SHOW_ID_ARGUMENT = "showId"
 private const val SHOW_DETAIL_ROUTE = "shows/{$SHOW_ID_ARGUMENT}"
 
-private const val ENTER_DURATION = 220
-private const val EXIT_DURATION = 160
 
 private fun createShowDetailRoute(showId: Int): String {
     return "shows/$showId"
@@ -41,49 +40,20 @@ fun AppNavigation(
     NavHost(
         navController = navController,
         startDestination = SHOW_LIST_ROUTE,
-        
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         enterTransition = {
-            fadeIn(
-                animationSpec = tween(ENTER_DURATION)
-            ) + slideInHorizontally(
-                animationSpec = tween(ENTER_DURATION),
-                initialOffsetX = { fullWidth ->
-                    fullWidth / 10
-                }
-            )
+            EnterTransition.None
         },
-
         exitTransition = {
-            fadeOut(
-                animationSpec = tween(EXIT_DURATION)
-            ) + slideOutHorizontally(
-                animationSpec = tween(ENTER_DURATION),
-                targetOffsetX = { fullWidth ->
-                    -fullWidth / 20
-                }
-            )
+            ExitTransition.None
         },
-
         popEnterTransition = {
-            fadeIn(
-                animationSpec = tween(ENTER_DURATION)
-            ) + slideInHorizontally(
-                animationSpec = tween(ENTER_DURATION),
-                initialOffsetX = { fullWidth ->
-                    -fullWidth / 10
-                }
-            )
+            EnterTransition.None
         },
-
         popExitTransition = {
-            fadeOut(
-                animationSpec = tween(EXIT_DURATION)
-            ) + slideOutHorizontally(
-                animationSpec = tween(ENTER_DURATION),
-                targetOffsetX = { fullWidth ->
-                    fullWidth / 10
-                }
-            )
+            ExitTransition.None
         }
     ) {
         composable(
