@@ -1,5 +1,8 @@
 package com.alvinwijaya.tvapp.ui.detail
 
+import android.content.Context
+import android.content.Intent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,10 +12,12 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -27,12 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.text.HtmlCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.alvinwijaya.tvapp.data.model.Show
 import com.alvinwijaya.tvapp.ui.components.AppTopBar
 import java.util.Locale
@@ -66,6 +72,13 @@ fun ShowDetailScreen(
     onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
+    val loadedShow = when (uiState) {
+        is ShowDetailUiState.Success -> uiState.show
+        else -> null
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -79,13 +92,30 @@ fun ShowDetailScreen(
                         onClick = onBackClick
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Go back"
                         )
                     }
+                },
+                actions = {
+                    if (loadedShow != null) {
+                        IconButton(
+                            onClick = {
+                                shareShow(
+                                    context = context,
+                                    show = loadedShow
+                                )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share show"
+                            )
+                        }
+                    }
                 }
             )
-        },
+        }
     ) { innerPadding ->
         when (uiState) {
             ShowDetailUiState.Loading -> {
@@ -186,7 +216,8 @@ private fun DetailSuccessContent(
     show: Show,
     modifier: Modifier = Modifier
 ) {
-    val posterUrl = show.image?.original ?: show.image?.medium
+    val posterUrl =
+        show.image?.original ?: show.image?.medium
 
     val premiereText = show.premiered
         ?.takeIf { it.isNotBlank() }
@@ -213,36 +244,10 @@ private fun DetailSuccessContent(
         )
     ) {
         item {
-            if (posterUrl != null) {
-                AsyncImage(
-                    model = posterUrl,
-                    contentDescription = "${show.name} poster",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(20.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .aspectRatio(2f / 3f),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No poster available",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+            DetailPoster(
+                posterUrl = posterUrl,
+                showName = show.name
+            )
         }
 
         item {
@@ -299,6 +304,64 @@ private fun DetailSuccessContent(
 }
 
 @Composable
+private fun DetailPoster(
+    posterUrl: String?,
+    showName: String,
+    modifier: Modifier = Modifier
+) {
+    val posterModifier = modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp)
+        .aspectRatio(2f / 3f)
+        .clip(RoundedCornerShape(20.dp))
+        .background(MaterialTheme.colorScheme.surfaceVariant)
+
+    if (posterUrl == null) {
+        Box(
+            modifier = posterModifier,
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No poster available",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        return
+    }
+
+    SubcomposeAsyncImage(
+        model = posterUrl,
+        contentDescription = "$showName poster",
+        modifier = posterModifier,
+        contentScale = ContentScale.Crop,
+        loading = {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(40.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 3.dp
+                )
+            }
+        },
+        error = {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Unable to load poster",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    )
+}
+
+@Composable
 private fun MetadataChip(
     text: String,
     highlighted: Boolean = false
@@ -330,6 +393,47 @@ private fun MetadataChip(
             fontWeight = FontWeight.SemiBold
         )
     }
+}
+
+private fun shareShow(
+    context: Context,
+    show: Show
+) {
+    val summary = show.summary
+        ?.toPlainText()
+        ?.takeIf { it.isNotBlank() }
+        ?: "No summary available."
+
+    val showUrl = show.url
+        ?.takeIf { it.isNotBlank() }
+        ?: "https://api.tvmaze.com/shows/${show.id}"
+
+    val shareText = buildString {
+        appendLine(show.name)
+        appendLine()
+        appendLine(summary)
+        appendLine()
+        append(showUrl)
+    }
+
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(
+            Intent.EXTRA_SUBJECT,
+            show.name
+        )
+        putExtra(
+            Intent.EXTRA_TEXT,
+            shareText
+        )
+    }
+
+    context.startActivity(
+        Intent.createChooser(
+            shareIntent,
+            "Share TV show"
+        )
+    )
 }
 
 private fun String.toPlainText(): String {
