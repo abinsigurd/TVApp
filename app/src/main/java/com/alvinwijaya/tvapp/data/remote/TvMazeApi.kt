@@ -1,5 +1,6 @@
 package com.alvinwijaya.tvapp.data.remote
 
+import com.alvinwijaya.tvapp.data.model.Season
 import com.alvinwijaya.tvapp.data.model.Show
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -15,6 +16,15 @@ interface TvMazeApi {
     @GET("shows/{id}")
     suspend fun getShowDetail(
         @Path("id") showId: Int,
-        @Query("embed") embed: String = "cast"
+        @Query("embed[]")
+        embeds: List<String> = listOf(
+            "cast",
+            "episodes"
+        )
     ): Show
+
+    @GET("shows/{id}/seasons")
+    suspend fun getShowSeasons(
+        @Path("id") showId: Int
+    ): List<Season>
 }

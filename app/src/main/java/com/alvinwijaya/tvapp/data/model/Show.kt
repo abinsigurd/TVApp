@@ -15,7 +15,8 @@ data class Show(
 )
 
 data class EmbeddedShowData(
-    val cast: List<CastCredit>? = null
+    val cast: List<CastCredit>? = null,
+    val episodes: List<Episode>? = null
 )
 
 data class Rating(

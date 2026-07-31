@@ -3,6 +3,9 @@ package com.alvinwijaya.tvapp.data.repository
 import com.alvinwijaya.tvapp.data.model.Show
 import com.alvinwijaya.tvapp.data.model.ShowDetailContent
 import com.alvinwijaya.tvapp.data.remote.TvMazeApi
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 interface ShowRepository {
 
@@ -27,12 +30,29 @@ class ShowRepositoryImpl(
 
     override suspend fun getShowDetailContent(
         showId: Int
-    ): ShowDetailContent {
-        val show = api.getShowDetail(showId)
+    ): ShowDetailContent = coroutineScope {
+        val showDeferred = async {
+            api.getShowDetail(showId)
+        }
 
-        return ShowDetailContent(
+        val seasonsDeferred = async {
+            try {
+                api.getShowSeasons(showId)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                emptyList()
+            }
+        }
+
+        val show = showDeferred.await()
+        val seasons = seasonsDeferred.await()
+
+        ShowDetailContent(
             show = show,
-            cast = show.embedded?.cast.orEmpty()
+            cast = show.embedded?.cast.orEmpty(),
+            seasons = seasons,
+            episodes = show.embedded?.episodes.orEmpty()
         )
     }
 }

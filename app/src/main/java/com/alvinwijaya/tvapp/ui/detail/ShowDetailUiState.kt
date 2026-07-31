@@ -7,7 +7,8 @@ sealed interface ShowDetailUiState {
     data object Loading : ShowDetailUiState
 
     data class Success(
-        val content: ShowDetailContent
+        val content: ShowDetailContent,
+        val selectedSeasonNumber: Int?
     ) : ShowDetailUiState
 
     data class Error(

@@ -46,6 +46,7 @@ fun ShowDetailRoute(
         uiState = uiState,
         onBackClick = onBackClick,
         onRetry = viewModel::loadShow,
+        onSeasonSelected = viewModel::selectSeason,
         isDarkTheme = isDarkTheme,
         onThemeToggle = onThemeToggle,
         modifier = modifier
@@ -57,6 +58,7 @@ fun ShowDetailScreen(
     uiState: ShowDetailUiState,
     onBackClick: () -> Unit,
     onRetry: () -> Unit,
+    onSeasonSelected: (Int) -> Unit,
     isDarkTheme: Boolean,
     onThemeToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier
@@ -124,6 +126,9 @@ fun ShowDetailScreen(
             is ShowDetailUiState.Success -> {
                 ShowDetailBody(
                     content = uiState.content,
+                    selectedSeasonNumber =
+                        uiState.selectedSeasonNumber,
+                    onSeasonSelected = onSeasonSelected,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
